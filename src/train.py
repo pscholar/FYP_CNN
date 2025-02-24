@@ -272,13 +272,13 @@ def train_model(dataset_dir):
     #print("Training network heads...")
     # model.train(dataset_train, dataset_val,
     #                      learning_rate=config.LEARNING_RATE,
-    #                      epochs=10,
+    #                      epochs=30,
     #                      layers="heads")  
     #Training: fine tune all layers
     print("Fine-tuning all layers...")
     model.train(dataset_train, dataset_val,
                          learning_rate=config.LEARNING_RATE,
-                         epochs=20,
+                         epochs=30,
                          layers="all")
     return model
 
