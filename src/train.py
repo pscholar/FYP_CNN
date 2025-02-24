@@ -254,26 +254,20 @@ def train_model(dataset_dir):
                                        VAL_ANNOTATIONS_VISUALIZATION_SAVE_NAME)
     #create model in training mode
     model = modellib.MaskRCNN(mode="training", config=config, model_dir=MODEL_DIR)
-    # Load COCO weights
-    last_model_path = model.find_last()
-    print("Last trained model path:", last_model_path)
-    # Load weights if they exist, otherwise start from scratch
-   last_model_path = ""
-    logs_folder = os.path.join(MODEL_DIR, 'flood_vehicle20250224T2000')
-    if not os.path.exists(logs_folder):
-      print("flood_vehicle20250224T2000 folder does not exist in MODEL_DIR, loading trained heads")
-      try:
-          model.load_weights("/content/drive/My Drive/mask_rcnn_logs/mask_rcnn_flood_vehicle_0023.h5", 
-                            by_name=True)
-      except Exception as e:
-        print("Trained heads don't exist yet, loading coco")
-        model.load_weights("mask_rcnn_coco.h5", 
-                        by_name=True, 
-                        exclude=["mrcnn_class_logits", "mrcnn_bbox_fc", 
-                              "mrcnn_bbox", "mrcnn_mask"])
-    else:
-      last_model_path = model.find_last()
-      model.load_weights(last_model_path,by_name=True)
+    try:    
+        last_model_path = ""
+        last_model_path = model.find_last()
+        model.load_weights(last_model_path, by_name=True)
+    except Exception as p:
+        print("flood_vehicle20250224T2000 folder does not exist in MODEL_DIR, loading trained heads")
+        try:
+            model.load_weights("/content/drive/My Drive/mask_rcnn_logs/mask_rcnn_flood_vehicle_0023.h5", by_name=True)
+        except Exception as e:
+            print("Trained heads don't exist yet, loading coco")
+            model.load_weights("mask_rcnn_coco.h5", 
+                            by_name=True, 
+                            exclude=["mrcnn_class_logits", "mrcnn_bbox_fc", 
+                                  "mrcnn_bbox", "mrcnn_mask"])
     #Training: head only
     #print("Training network heads...")
     # model.train(dataset_train, dataset_val,
