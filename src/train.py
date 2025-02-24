@@ -11,7 +11,7 @@ from mrcnn import model as modellib
 from mrcnn.config import Config
 #from mrcnn import visualize
 DATASET_DIR = "../dataset"
-MODEL_DIR = "logs"
+MODEL_DIR = "/content/drive/My Drive/mask_rcnn_logs"
 IMAGES_SAVE_PATH = "visualizations"
 LOSS_SAVE_NAME = "loss.jpg"
 TRAIN_ANNOTATIONS_VISUALIZATION_SAVE_NAME = "train_annotation.jpg"
@@ -255,156 +255,37 @@ def train_model(dataset_dir):
     #create model in training mode
     model = modellib.MaskRCNN(mode="training", config=config, model_dir=MODEL_DIR)
     # Load COCO weights
-    try:
-        model.load_weights("mask_rcnn_coco.h5", 
-                         by_name=True, 
-                         exclude=["mrcnn_class_logits", "mrcnn_bbox_fc", 
-                                "mrcnn_bbox", "mrcnn_mask"])
-    except Exception as e:
-        print(f"Error loading weights: {e}")
+    last_model_path = model.find_last()
+    print("Last trained model path:", last_model_path)
+    # Load weights if they exist, otherwise start from scratch
+    if last_model_path:
+        model.load_weights(last_model_path, by_name=True)
+        print("Loaded last trained weights.")
+    else:
+        print("No previous weights found. Starting from previously trained heads")
+        try:
+            model.load_weights("/content/drive/My Drive/mask_rcnn_logs/mask_rcnn_flood_vehicle_0023.h5", 
+                             by_name=True, 
+                             exclude=["mrcnn_class_logits", "mrcnn_bbox_fc", 
+                                    "mrcnn_bbox", "mrcnn_mask"])
+        except Exception as e:
+            print(f"Error loading weights: {e}")
         return
     #Training: head only
-    print("Training network heads...")
-    history1 = model.train(dataset_train, dataset_val,
-                         learning_rate=config.LEARNING_RATE,
-                         epochs=10,
-                         layers="heads")  
+    #print("Training network heads...")
+    # model.train(dataset_train, dataset_val,
+    #                      learning_rate=config.LEARNING_RATE,
+    #                      epochs=10,
+    #                      layers="heads")  
     #Training: fine tune all layers
     print("Fine-tuning all layers...")
-    history2 = model.train(dataset_train, dataset_val,
+    model.train(dataset_train, dataset_val,
                          learning_rate=config.LEARNING_RATE,
                          epochs=20,
                          layers="all")
-    #Combine histories
-    history = {}
-    for k in history1.history.keys():
-        history[k] = history1.history[k] + history2.history[k]  
-    # Plot training metrics
-    plot_training_metrics(history, LOSS_SAVE_NAME)  
-    return model, history
-
-def evaluate_model(model, dataset_dir):
-    """
-    Evaluate the trained model on test dataset.
-    
-    Args:
-        model: Trained Mask R-CNN model
-        dataset_dir: Root directory of the dataset
-    """
-    config = FloodTaxiConfig()
-    # Load test dataset
-    dataset_test = FloodTaxiDataset()
-    dataset_test.load_dataset(dataset_dir, "test")
-    dataset_test.prepare()
-    print(f"Test images: {len(dataset_test.image_ids)}")
-    
-    # Initialize metrics
-    APs, precisions, recalls, f1_scores = [], [], [], []
-    y_true, y_pred = [], []
-    
-    # Evaluate each image
-    for image_id in dataset_test.image_ids:
-        # Load ground truth
-        image, image_meta, gt_class_id, gt_bbox, gt_mask = \
-            modellib.load_image_gt(dataset_test, config, image_id)
-        
-        # Run detection
-        results = model.detect([image], verbose=0)
-        r = results[0]
-        
-        # Compute AP
-        AP, precisions, recalls, overlaps = \
-            utils.compute_ap(gt_bbox, gt_class_id, gt_mask,
-                           r["rois"], r["class_ids"], r["scores"], r['masks'])
-        
-        # Compute precision, recall, F1
-        if len(gt_class_id) > 0 and len(r['class_ids']) > 0:
-            p, r, f1, _ = precision_recall_fscore_support(
-                gt_class_id, r['class_ids'], average='macro')
-            precisions.append(p)
-            recalls.append(r)
-            f1_scores.append(f1)           
-            # Store for confusion matrix
-            y_true.extend(gt_class_id)
-            y_pred.extend(r['class_ids'])      
-        APs.append(AP)
-    
-    # Print metrics
-    print_evaluation_metrics(APs, precisions, recalls, f1_scores, 
-                             y_true, y_pred,EVAL_METRICS_FIGURE_SAVE_NAME)
-
-def plot_training_metrics(history,save_name):
-    """Plot training and validation metrics."""
-    plt.figure(figsize=(12, 4))  
-    # Plot loss
-    plt.subplot(1, 2, 1)
-    plt.plot(history['loss'], label='Training Loss')
-    plt.plot(history['val_loss'], label='Validation Loss')
-    plt.title('Model Loss')
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
-    plt.legend()
-    
-    # Plot learning rate
-    plt.subplot(1, 2, 2)
-    plt.plot(history['lr'], label='Learning Rate')
-    plt.title('Learning Rate')
-    plt.xlabel('Epoch')
-    plt.ylabel('Learning Rate')
-    plt.legend()
-    os.makedirs(IMAGES_SAVE_PATH, exist_ok=True)
-    save_path = os.path.join(IMAGES_SAVE_PATH, save_name)
-    plt.tight_layout()
-    plt.savefig(save_path, dpi=300, bbox_inches="tight")  # Save instead of show
-    plt.close()  # Close the plot to free memory
-
-
-def print_evaluation_metrics(APs, precisions, recalls, f1_scores, 
-                             y_true, y_pred, save_name):
-    os.makedirs(IMAGES_SAVE_PATH, exist_ok=True)
-    save_path = os.path.join(IMAGES_SAVE_PATH,  EVAL_METRICS_FILE_SAVE_NAME)
-    conf_matrix = confusion_matrix(y_true, y_pred);
-    with open(save_path, "w") as f:
-      sys.stdout = f 
-      print("\nEvaluation Metrics:")
-      print(f"Mean Average Precision (mAP): {np.mean(APs):.4f}")
-      print(f"Mean Precision: {np.mean(precisions):.4f}")
-      print(f"Mean Recall: {np.mean(recalls):.4f}")
-      print(f"Mean F1 Score: {np.mean(f1_scores):.4f}")   
-      print("\nConfusion Matrix:")
-      print(conf_matrix)
-      sys.stdout = sys.__stdout__
-
-    print("\nEvaluation Metrics:")
-    print(f"Mean Average Precision (mAP): {np.mean(APs):.4f}")
-    print(f"Mean Precision: {np.mean(precisions):.4f}")
-    print(f"Mean Recall: {np.mean(recalls):.4f}")
-    print(f"Mean F1 Score: {np.mean(f1_scores):.4f}")   
-    print("\nConfusion Matrix:")
-    print(conf_matrix)
-    # Plot confusion matrix
-    plt.figure(figsize=(8, 6))
-    plt.imshow(conf_matrix, interpolation='nearest', cmap=plt.cm.Blues)
-    plt.title('Confusion Matrix')
-    plt.colorbar()
-    
-    classes = ['Background', 'Flood', 'Taxi']
-    tick_marks = np.arange(len(classes))
-    plt.xticks(tick_marks, classes, rotation=45)
-    plt.yticks(tick_marks, classes)
-    
-    plt.ylabel('True Label')
-    plt.xlabel('Predicted Label')
-    os.makedirs(IMAGES_SAVE_PATH, exist_ok=True)
-    save_path = os.path.join(IMAGES_SAVE_PATH, save_name)
-    plt.tight_layout()
-    plt.savefig(save_path, dpi=300, bbox_inches="tight")  # Save instead of show
-    plt.close()  # Close the plot to free memory
-
+    return model
 
 # Main execution
 if __name__ == "__main__":  
     # Train model
-    model, history = train_model(DATASET_DIR)  
-    # Evaluate model
-    evaluate_model(model, MODEL_DIR)
+    model, history = train_model(DATASET_DIR)
