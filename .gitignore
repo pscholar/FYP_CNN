@@ -249,5 +249,5 @@ fabric.properties
 
 #weights
 src/logs/
-src/mask_rcnn_coco.h5
+*.h5
 
