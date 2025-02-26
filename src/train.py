@@ -195,7 +195,7 @@ class FloodTaxiConfig(Config):
     """
     NAME = "flood_vehicle"
     NUM_CLASSES = 1 + 2 
-    IMAGES_PER_GPU = 1
+    IMAGES_PER_GPU = 2
     # Number of training steps per epoch
     # This doesn't need to match the size of the training set. Tensorboard
     # updates are saved at the end of each epoch, so setting this to a
@@ -204,7 +204,7 @@ class FloodTaxiConfig(Config):
     # might take a while, so don't set this too small to avoid spending
     # a lot of time on validation stats.
     # Initially, I had set this to 100, during first round of training.
-    STEPS_PER_EPOCH = 1
+    STEPS_PER_EPOCH = 200
     # Number of validation steps to run at the end of every training epoch.
     # A bigger number improves accuracy of validation stats, but slows
     # down the training.
@@ -267,8 +267,8 @@ def train_model():
     #Training: fine tune all layers
     print("Fine-tuning all layers...")
     model.train(dataset_train, dataset_val,
-                         learning_rate=config.LEARNING_RATE,
-                         epochs=1,
+                         learning_rate=config.LEARNING_RATE/10,
+                         epochs=60,
                          layers="all",
                          custom_callbacks=[loss_logger]                        
                          )
