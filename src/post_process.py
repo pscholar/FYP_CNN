@@ -2,7 +2,6 @@ import cv2
 import numpy as np
 from skimage.filters import threshold_multiotsu
 from skimage.measure import shannon_entropy
-from shapely.geometry import Polygon
 
 def multi_otsu_entropy_segmentation(image):
     if len(image.shape) == 3:
@@ -113,10 +112,7 @@ def visualize_refinement(image,new_flood_mask,taxi_bbox, flood_bbox, roi_polygon
     y1, x1, y2, x2 = flood_bbox
     cv2.rectangle(blend, (x1, y1), (x2, y2), (255, 0, 0), 2)
     cv2.polylines(blend, roi_polygon, isClosed=True, color=(255, 255, 255), thickness=2)
-    cv2.namedWindow('Refinement of ROIs', cv2.WINDOW_NORMAL)
-    cv2.imshow("Refinement of ROIs",blend)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    return blend
 
 def process_detection_results(model_results, image):
     rois = model_results[0]['rois']
@@ -188,13 +184,13 @@ def process_detection_results(model_results, image):
     combined_polygon = all_polygons[0]
     for poly in all_polygons[1:]:
         combined_polygon = combined_polygon.union(poly)
-    visualize_refinement(image,new_flood_mask,rois[largest_taxi_idx],
+    visual = visualize_refinement(image,new_flood_mask,rois[largest_taxi_idx],
                          (final_y1, final_x1, final_y2, final_x2),[combined_polygon])
-    return new_taxi_mask, (T_y1, T_x1, T_y2, T_x2), new_flood_mask
+    return new_taxi_mask, (T_y1, T_x1, T_y2, T_x2), new_flood_mask, visual
 
 
 def extract_subimage_from_bbox(image, bbox):
     y1, x1, y2, x2 = bbox
     subimage = image[y1:y2, x1:x2]    
-    print(subimage.shape)
+    print(f"Extracted Subimage Shape: {subimage.shape}")
     return subimage

@@ -1,23 +1,16 @@
-# contains utility functions for adding marker to taxis
 
 import json
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
 
+MAX_DISPLAY_SIZE = 1080
 points1, points2 = [], []
 
-# Resizing parameters
-MAX_DISPLAY_SIZE = 1080  # Maximum size of the image to display (width or height)
 
 def resize_image(image):
-    """
-    Resizes the image so that the largest dimension is <= MAX_DISPLAY_SIZE.
-    Maintains aspect ratio.
-    """
     height, width = image.shape[:2]
     max_dim = max(height, width)
-    
     if max_dim > MAX_DISPLAY_SIZE:
         scaling_factor = MAX_DISPLAY_SIZE / float(max_dim)
         new_size = (int(width * scaling_factor), int(height * scaling_factor))
@@ -41,7 +34,6 @@ def select_points(event, x, y, flags, param):
 def get_homography(img1, img2):
     global image1, image2, image1_display, image2_display, selecting_first_image
     image1, image2 = img1.copy(), img2.copy()
-    # Resize images to fit the display
     image1_display, scale1 = resize_image(image1)
     image2_display, scale2 = resize_image(image2)
     selecting_first_image = True
@@ -57,12 +49,9 @@ def get_homography(img1, img2):
     if len(points1) < 4 or len(points2) < 4:
         print("Error: Select at least 4 points in both images!")
         return None, None
-    # Scale points back to the original image size
     pts1 = np.array(points1, dtype=np.float32) * (1 / scale1)
     pts2 = np.array(points2, dtype=np.float32) * (1 / scale2)
-    # pts1 = np.array(points1, dtype=np.float32).reshape(-1, 2)
-    # pts2 = np.array(points2, dtype=np.float32).reshape(-1, 2)
-    homography_matrix, _ = cv2.findHomography(pts1, pts2, cv2.RANSAC,5.0)
+    homography_matrix, _ = cv2.findHomography(pts1, pts2, cv2.RANSAC,2.0)
     print("Homography Matrix:\n", homography_matrix)
     matched_img = draw_matches(image1, pts1, image2, pts2)
     _, ax = plt.subplots()
@@ -125,7 +114,7 @@ def apply_mask(image, mask):
     masked_image = cv2.bitwise_and(image, mask)
     return masked_image
 
-def warp_and_blend(ref_image, input_image, mask, homography, flag, feather_size=3):
+def warp_and_blend(ref_image, input_image, mask, homography, flag = 1, feather_size=3):
     mask_gray = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
     _, binary_mask = cv2.threshold(mask_gray, 1, 255, cv2.THRESH_BINARY)
     if flag < 0:
@@ -141,14 +130,17 @@ def warp_and_blend(ref_image, input_image, mask, homography, flag, feather_size=
     return blended_image
 
 if __name__ == "__main__":
-  reference_image = cv2.imread("To Embed/Reference_Taxi_Body_Outline.jpg")
-  input_image = cv2.imread("To Embed/to12.jpg")
+  ref_img_path = "resources/Reference_Taxi_Body_Outline.jpg"  
+  reference_image = cv2.imread(ref_img_path)
+  input_img_path = "resources/to12.jpg"  
+  input_image = cv2.imread(input_img_path)
   H, matched_img = get_homography(reference_image, input_image)
-  taxi_mask, marker_mask = parse_json_to_masks("To Embed/Taxi_Reference_Masks.json", reference_image.shape)
+  taxi_mask, marker_mask = parse_json_to_masks("resources/Taxi_Reference_Masks.json", reference_image.shape)
   blended_image = warp_and_blend(reference_image,input_image,marker_mask,H,1,3)
-  cv2.imwrite("To Embed/to12_Marked.jpg",blended_image,[cv2.IMWRITE_JPEG_QUALITY, 100])
+  output_path = "resources/to12_Marked.jpg"
+  cv2.imwrite(output_path,blended_image,[cv2.IMWRITE_JPEG_QUALITY, 100])
   fig, ax = plt.subplots()
   ax.imshow(cv2.cvtColor(blended_image,cv2.COLOR_BGR2RGB))
-  plt.title("Taxi Markers")
+  plt.title("Taxi Warp")
   plt.tight_layout()
   plt.show()

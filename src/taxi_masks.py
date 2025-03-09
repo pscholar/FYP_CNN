@@ -1,7 +1,3 @@
-# contains functions for creating a mask for markers in the
-# reference image and also creating a mask for the region of the 
-# reference  image that is occupied by the taxi
-
 import json
 import numpy as np
 import matplotlib.pyplot as plt
@@ -41,10 +37,11 @@ def apply_mask(image, mask):
     masked_image = cv2.bitwise_and(image, mask)
     return masked_image
 
-image = cv2.imread("To Embed/Reference_Taxi_Body_Outline.jpg")
-taxi_mask, marker_mask = parse_json_to_masks("To Embed/Taxi_Reference_Masks.json", image.shape)
-masked_image = apply_mask(image,  marker_mask)
-fig, ax = plt.subplots()
-ax.imshow(cv2.cvtColor(masked_image,cv2.COLOR_BGR2RGB))
-plt.title("Taxi Markers")
-plt.show()
+if __name__ == "__main__":
+  image = cv2.imread("resources/Reference_Taxi_Body_Outline.jpg")
+  taxi_mask, marker_mask = parse_json_to_masks("resources/Taxi_Reference_Masks.json", image.shape)
+  masked_image = apply_mask(image,  marker_mask)
+  fig, ax = plt.subplots()
+  ax.imshow(cv2.cvtColor(masked_image,cv2.COLOR_BGR2RGB))
+  plt.title("Taxi Markers")
+  plt.show()

@@ -3,15 +3,15 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
-import post_process
-import sift3
+import post_process as pp
+import correspondence as corr
 import os
 
 CLASS_NAMES = ['BG', 'flood', 'taxi']
-REFERENCE_IMAGE_ONE = "To Embed/Reference_Taxi_Body_Outline.jpg"
-REFERENCE_IMAGE_TWO = "To Embed/Reference_Taxi_Body_Outline_Flipped.jpg"
-REFERENCE_JSON_ONE = "To Embed/Taxi_Reference_Masks.json"
-REFERENCE_JSON_TWO =  "To Embed/Taxi_Reference_Masks_Flipped.json"
+REFERENCE_IMAGE_ONE = "resources/Reference_Taxi_Body_Outline.jpg"
+REFERENCE_IMAGE_TWO = "resources/Reference_Taxi_Body_Outline_Flipped.jpg"
+REFERENCE_JSON_ONE = "resources/Taxi_Reference_Masks.json"
+REFERENCE_JSON_TWO =  "resources/Taxi_Reference_Masks_Flipped.json"
 OUT_DIR = "results"
 MASK_RCNN_RESULTS = "detections.jpg"
 SUBIMAGE = "subimage.jpg"
@@ -41,6 +41,8 @@ def save_plot_image(file_name,image,title, show = False):
     fig = get_ax(rows=1, cols=1, size=8)
     _, ax = fig
     ax.imshow(cv2.cvtColor(image,cv2.COLOR_BGR2RGB))
+    ax.set_xlabel("pixels")  
+    ax.set_ylabel("pixels")
     plt.tight_layout()
     plt.title(title)
     plt.savefig(save_path,dpi=300)
@@ -112,9 +114,9 @@ def extract_bounding_boxes(json_path, image_size):
     return taxi_bbox, flood_mask
 
 def get_homography_matrix(ref1,ref2,target):   
-    best_ref, keypoints1, keypoints2, good_matches, flag = sift3.find_best_reference(ref1, ref2, target)
-    matched_img = sift3.visualize_matches(best_ref, target, keypoints1, keypoints2, good_matches)
-    H, mask = sift3.compute_homography(best_ref, keypoints1, keypoints2, good_matches)
+    best_ref, keypoints1, keypoints2, good_matches, flag = corr.find_best_reference(ref1, ref2, target)
+    matched_img = corr.visualize_matches(best_ref, target, keypoints1, keypoints2, good_matches)
+    H, mask = corr.compute_homography(best_ref, keypoints1, keypoints2, good_matches)
     return best_ref,H,flag,matched_img 
 
 def warp_flood_over_reference_image(target, input_image, homography_matrix, 
@@ -134,9 +136,9 @@ def get_equally_spaced_points(x_fit, y_fit):
     num_points = len(x_fit)
     if num_points < 3:
         raise ValueError("Not enough points to select three equally spaced ones.")
-    idx1 = 0  # First point (start)
-    idx2 = num_points // 2  # Middle point
-    idx3 = num_points - 1  # Last point (end)
+    idx1 = 0  
+    idx2 = num_points // 2  
+    idx3 = num_points - 1 
     selected_points = [
         (x_fit[idx1], y_fit[idx1]),
         (x_fit[idx2], y_fit[idx2]),
@@ -210,19 +212,13 @@ def get_flood_depth(blended_image,reference_mask,warped_flood_mask,
     return average_depth,depths,blended_image
 
 if __name__ == "__main__":
-  # Example usage
-  json_path = "To Embed/test_image_via_data.json"
-  image_path = "To Embed/624_Marked.jpg"
+  json_path = "resources/test_image_via_data.json"
+  image_path = "resources/624_Marked.jpg"
   image = cv2.imread(image_path)
   image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
   height, width, _ = image.shape
   taxi_bbox, flood_mask = extract_bounding_boxes(json_path,(height,width))
-  print(flood_mask.shape)
-  cv2.namedWindow('Flood mask', cv2.WINDOW_NORMAL)
-  cv2.imshow("Flood mask", flood_mask) 
-  cv2.waitKey(0)
-  cv2.destroyAllWindows()
-  subimage = post_process.extract_subimage_from_bbox(image,taxi_bbox)
+  subimage = pp.extract_subimage_from_bbox(image,taxi_bbox)
   subimage =  cv2.cvtColor(subimage, cv2.COLOR_RGB2BGR)
   save_plot_image(SUBIMAGE,subimage, "Extracted Subimage using Taxi Bounding Box")
 
@@ -261,5 +257,5 @@ if __name__ == "__main__":
                                                                         BASELINE,PIXEL_HEIGHT)
   save_plot_image(DEPTH_RESULTS,blended_image,"Estimated Depth",show=True)
 
-  print(f"Estimated Average Depth: {average_depth}")
-  #sbstst
+  print(f"Estimated Average Depth: {average_depth}mm")
+ 

@@ -243,21 +243,13 @@ def train_model():
         last_model_path = model.find_last()
         model.load_weights(last_model_path, by_name=True)
     except Exception as p:
-        print("flood_vehicle20250224T2000 folder does not exist in MODEL_DIR, loading trained heads")
-        try:
-            model.load_weights("/content/drive/My Drive/mask_rcnn_logs/mask_rcnn_flood_vehicle_0023.h5", by_name=True)
-        except Exception as e:
-            print("Trained heads don't exist yet, loading coco")
-            model.load_weights("mask_rcnn_coco.h5", 
-                            by_name=True, 
-                            exclude=["mrcnn_class_logits", "mrcnn_bbox_fc", 
-                                  "mrcnn_bbox", "mrcnn_mask"])
+        print("Trained heads don't exist yet, loading coco")
+        model.load_weights("mrcnn_weights/mask_rcnn_coco.h5", 
+                        by_name=True, 
+                        exclude=["mrcnn_class_logits", "mrcnn_bbox_fc", 
+                              "mrcnn_bbox", "mrcnn_mask"])
             
-    #Training: head only
-    #Leave this commented out, if your beginning training using
-    #mask_rcnn_flood_vehicle_0023.h5 pretrained weights.
-    #If your beginning with mask_rcnn_coco.h5 pretrained weights,
-    #you may need 
+    #Training: heads only
     print("Training network heads...")
     model.train(dataset_train, dataset_val,
                          learning_rate=config.LEARNING_RATE,
@@ -273,7 +265,6 @@ def train_model():
                          custom_callbacks=[loss_logger]                        
                          )
     return model
-
 
 if __name__ == "__main__":  
     model = train_model()
