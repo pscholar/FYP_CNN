@@ -7,20 +7,49 @@ import os
 import matplotlib.pyplot as plt
 from train import FloodTaxiConfig
 import post_process
+import depth_extractor
 
 CLASS_NAMES = ['BG', 'flood', 'taxi']
-IMAGES_SAVE_PATH = "visualizations"
+REFERENCE_IMAGE_ONE = "To Embed/Reference_Taxi_Body_Outline.jpg"
+REFERENCE_IMAGE_TWO = "To Embed/Reference_Taxi_Body_Outline_Flipped.jpg"
+REFERENCE_JSON_ONE = "To Embed/Taxi_Reference_Masks.json"
+REFERENCE_JSON_TWO =  "To Embed/Taxi_Reference_Masks_Flipped.json"
+OUT_DIR = "results"
+MASK_RCNN_RESULTS = "detections.jpg"
+SUBIMAGE = "subimage.jpg"
+MATCHES = "matches.jpg"
+BLENDED_IMAGE = "registered.jpg"
+TAXI_BODY = "taximask.jpg"
+WARPED_FLOOD = "floodmask.jpg"
+DEPTH_RESULTS = "depth.jpg"
+PIXEL_HEIGHT = 2.65
+BASELINE =  [(0,767),(1831,767)]
+BLUE_SEA_COLOR = (250, 180, 80)
+FILE = "631.jpg"
 
 def get_ax(rows=1, cols=1, size=8):
     fig = plt.subplots(rows, cols, figsize=(size*cols, size*rows))
     return fig
 
-def get_files_in_directory(directory_path):
-    if not os.path.isdir(directory_path):
-        raise ValueError(f"Invalid directory: {directory_path}")
-    
-    files = [os.path.join(directory_path, f) for f in os.listdir(directory_path) if os.path.isfile(os.path.join(directory_path, f))]
-    return files, len(files)
+def get_output_path(file_name):
+    if not os.path.exists(OUT_DIR):
+        os.makedirs(OUT_DIR)
+    output_path = os.path.join(OUT_DIR, file_name)
+    return output_path
+
+def save_plot_image(file_name,image,title,show = False):
+    save_path = get_output_path(file_name)
+    fig = get_ax(rows=1, cols=1, size=8)
+    _, ax = fig
+    ax.imshow(cv2.cvtColor(image,cv2.COLOR_BGR2RGB))
+    plt.tight_layout()
+    plt.title(title)
+    plt.savefig(save_path,dpi=300) 
+    if show:
+        plt.show()
+    else:
+        plt.close()
+    print(f"Saved a figure to: {save_path}")
 
 class InferenceConfig(FloodTaxiConfig):
     GPU_COUNT = 1
@@ -30,12 +59,13 @@ class InferenceConfig(FloodTaxiConfig):
 model = mrcnn.model.MaskRCNN(mode="inference",
                              config=InferenceConfig(),
                              model_dir=os.getcwd())
-#change the name of the weights accordingly
+
 model.load_weights(filepath="mask_rcnn_flood_vehicle_0030.h5",
                    by_name=True)
-file = "631.jpg"
-image = cv2.imread(file)
+
+image = cv2.imread(FILE)
 image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+print("Detecting Flood and Taxi Regions............")
 r = model.detect([image], verbose=0)
 rt = r[0]
 fig = get_ax(rows=1, cols=1, size=8)
@@ -45,39 +75,54 @@ mrcnn.visualize.display_instances(image=image,
                                   class_ids=rt['class_ids'],
                                   class_names=CLASS_NAMES,
                                   scores=rt['scores'],
-                                  title=file,
+                                  title="Mask RCNN Detection Results",
                                   figAx= fig)
+save_file_path = get_output_path(MASK_RCNN_RESULTS)
 plt.tight_layout()
-plt.show()
-new_taxi_mask, bbox, new_flood_mask = post_process.process_detection_results(r,image)
+plt.savefig(save_file_path,dpi=300)
+plt.close()
+print(f"Saved Detections to: {save_file_path}")
+
+new_taxi_mask, bbox, flood_mask = post_process.process_detection_results(r,image)
 subimage = post_process.extract_subimage_from_bbox(image,bbox)
 subimage =  cv2.cvtColor(subimage, cv2.COLOR_RGB2BGR) 
-cv2.namedWindow('Extracted Taxi', cv2.WINDOW_NORMAL)
-cv2.imshow("Extracted Taxi",subimage) 
-cv2.waitKey(0)
-cv2.destroyAllWindows()
-# change the image path accordinly
-# DIR = "test"
-# test_files, _ = get_files_in_directory(DIR)
-# for file in test_files:   
-#   image = cv2.imread(file)
-#   image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-#   r = model.detect([image], verbose=0)
-#   r = r[0]
-#   fig = get_ax(rows=1, cols=1, size=8)
-#   mrcnn.visualize.display_instances(image=image,
-#                                     boxes=r['rois'],
-#                                     masks=r['masks'],
-#                                     class_ids=r['class_ids'],
-#                                     class_names=CLASS_NAMES,
-#                                     scores=r['scores'],
-#                                     title=file,
-#                                     figAx= fig)
-  #os.makedirs(IMAGES_SAVE_PATH, exist_ok=True)
-  #save_path = os.path.join(IMAGES_SAVE_PATH, "predicted.jpg")
-  #plt.tight_layout()
-  #plt.savefig(save_path, dpi=300, bbox_inches="tight") 
-  #plt.show() 
-  #plt.close()
+save_plot_image(SUBIMAGE,subimage, "Extracted Subimage using Taxi Bounding Box")
+
+ref1 = cv2.imread(REFERENCE_IMAGE_ONE)
+ref2 = cv2.imread(REFERENCE_IMAGE_TWO)
+best_ref, homography_matrix, flag,matched_img = depth_extractor.get_homography_matrix(ref1,ref2,subimage)
+save_plot_image(MATCHES,matched_img,"Correspondences between Reference Image and Scene Image")
+print(f"Homography Matrix: {homography_matrix}")
+
+flood_mask = depth_extractor.convert_flood_mask_to_color(flood_mask,BLUE_SEA_COLOR)
+blended_image, warped_flood_mask =  \
+      depth_extractor.warp_flood_over_reference_image(best_ref,flood_mask,
+                                                      homography_matrix, BLUE_SEA_COLOR , 
+                                                      alpha1=.5,alpha2=1.0)
+save_plot_image(BLENDED_IMAGE ,blended_image,"Flood Region Registered to the Reference Image")
+
+if flag < 0:
+    taxi_mask_json_path = REFERENCE_JSON_TWO 
+    
+else:
+    taxi_mask_json_path = REFERENCE_JSON_ONE
+
+ref_taxi_body_mask, _ = depth_extractor.parse_json_to_masks(taxi_mask_json_path, best_ref.shape)   
+ref_taxi_body_mask = cv2.cvtColor(ref_taxi_body_mask, cv2.COLOR_BGR2GRAY)
+_, ref_taxi_body_mask = cv2.threshold(ref_taxi_body_mask, 10, 255, cv2.THRESH_BINARY)
+save_plot_image(TAXI_BODY,ref_taxi_body_mask,"Mask of Taxi Body from Best Matching Reference Image")
+
+warped_flood_mask = cv2.cvtColor(warped_flood_mask, cv2.COLOR_BGR2GRAY)
+_, warped_flood_mask =  cv2.threshold(warped_flood_mask, 10, 255, cv2.THRESH_BINARY)
+save_plot_image(WARPED_FLOOD,warped_flood_mask,"Mask of Flood Region in Registered Image")
+
+average_depth, depths, blended_image = depth_extractor.get_flood_depth(blended_image,
+                                                                       ref_taxi_body_mask,
+                                                                       warped_flood_mask,
+                                                                      BASELINE,PIXEL_HEIGHT)
+save_plot_image(DEPTH_RESULTS,blended_image,"Estimated Depth",True)
+
+print(f"Estimated Average Depth: {average_depth}")
+
 
 

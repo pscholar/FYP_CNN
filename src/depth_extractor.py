@@ -5,8 +5,50 @@ import matplotlib.pyplot as plt
 import cv2
 import post_process
 import sift3
+import os
 
+CLASS_NAMES = ['BG', 'flood', 'taxi']
+REFERENCE_IMAGE_ONE = "To Embed/Reference_Taxi_Body_Outline.jpg"
+REFERENCE_IMAGE_TWO = "To Embed/Reference_Taxi_Body_Outline_Flipped.jpg"
+REFERENCE_JSON_ONE = "To Embed/Taxi_Reference_Masks.json"
+REFERENCE_JSON_TWO =  "To Embed/Taxi_Reference_Masks_Flipped.json"
+OUT_DIR = "results"
+MASK_RCNN_RESULTS = "detections.jpg"
+SUBIMAGE = "subimage.jpg"
+MATCHES = "matches.jpg"
+BLENDED_IMAGE = "registered.jpg"
+TAXI_BODY = "taximask.jpg"
+WARPED_FLOOD = "floodmask.jpg"
+DEPTH_RESULTS = "depth.jpg"
+PIXEL_HEIGHT = 2.65
+BASELINE =  [(0,767),(1831,767)]
+BLUE_SEA_COLOR = (250, 180, 80)
+FILE = "631.jpg"
 blue_sea_color = (250, 180, 80)
+
+def get_ax(rows=1, cols=1, size=8):
+    fig = plt.subplots(rows, cols, figsize=(size*cols, size*rows))
+    return fig
+
+def get_output_path(file_name):
+    if not os.path.exists(OUT_DIR):
+        os.makedirs(OUT_DIR)
+    output_path = os.path.join(OUT_DIR, file_name)
+    return output_path
+
+def save_plot_image(file_name,image,title, show = False):
+    save_path = get_output_path(file_name)
+    fig = get_ax(rows=1, cols=1, size=8)
+    _, ax = fig
+    ax.imshow(cv2.cvtColor(image,cv2.COLOR_BGR2RGB))
+    plt.tight_layout()
+    plt.title(title)
+    plt.savefig(save_path,dpi=300)
+    if show:
+        plt.show()
+    else:
+        plt.close()
+    print(f"Saved a figure to: {save_path}")
 
 def apply_mask(image, mask):
     mask = mask.astype(np.uint8)
@@ -16,6 +58,11 @@ def apply_mask(image, mask):
         mask = mask.astype(image.dtype)
     masked_image = cv2.bitwise_and(image, mask)
     return masked_image
+
+def convert_flood_mask_to_color(flood_mask,blue_sea_color=(250, 180, 80)):
+    flood_mask_color = np.zeros((flood_mask.shape[0], flood_mask.shape[1], 3), dtype=np.uint8)
+    flood_mask_color[flood_mask == 255] = blue_sea_color    
+    return flood_mask_color
 
 def parse_json_to_masks(json_path, img_shape):
     with open(json_path, 'r') as file:
@@ -49,7 +96,7 @@ def extract_bounding_boxes(json_path, image_size):
     regions = image_data["regions"]
     
     taxi_bbox = None
-    flood_mask = np.zeros((image_size[0], image_size[1], 3), dtype=np.uint8)  # Create a 3-channel blank image   
+    flood_mask = np.zeros((image_size[0], image_size[1]), dtype=np.uint8)  # Create a 3-channel blank image   
     for region in regions:
         attributes = region["region_attributes"]
         shape = region["shape_attributes"]
@@ -60,16 +107,15 @@ def extract_bounding_boxes(json_path, image_size):
             taxi_bbox = (y1, x1, y2, x2)
         elif attributes.get("Test_Sample") == "flood":
             flood_points = np.array(list(zip(shape["all_points_x"], shape["all_points_y"])), dtype=np.int32)
-            cv2.fillPoly(flood_mask, [flood_points], blue_sea_color)  # Fill flood region with blue color
+            cv2.fillPoly(flood_mask, [flood_points], 255)  
     
     return taxi_bbox, flood_mask
 
-def get_homography_matrix(ref1,ref2,target, vis = True):   
+def get_homography_matrix(ref1,ref2,target):   
     best_ref, keypoints1, keypoints2, good_matches, flag = sift3.find_best_reference(ref1, ref2, target)
-    if(vis):
-      sift3.visualize_matches(best_ref, target, keypoints1, keypoints2, good_matches)
+    matched_img = sift3.visualize_matches(best_ref, target, keypoints1, keypoints2, good_matches)
     H, mask = sift3.compute_homography(best_ref, keypoints1, keypoints2, good_matches)
-    return best_ref,H,flag 
+    return best_ref,H,flag,matched_img 
 
 def warp_flood_over_reference_image(target, input_image, homography_matrix, 
                       blue_sea_color, alpha1=0.5, alpha2=0.5):
@@ -82,10 +128,6 @@ def warp_flood_over_reference_image(target, input_image, homography_matrix,
     warped_img_float = warped_img.astype(np.float32) / 255.0
     blended_img = target_float * (1 - blue_mask[:, :, None] / 255.0) + warped_img_float * (blue_mask[:, :, None] / 255.0)
     blended_img = (blended_img * 255).astype(np.uint8)
-    _, ax = plt.subplots()
-    ax.imshow(cv2.cvtColor(blended_img, cv2.COLOR_BGR2RGB))
-    plt.title("Warped Image Overlay with Blue Sea Masked Blending")
-    plt.show()
     return blended_img, warped_img
 
 def get_equally_spaced_points(x_fit, y_fit):
@@ -122,12 +164,12 @@ def get_flood_depth(blended_image,reference_mask,warped_flood_mask,
         x_fit = np.clip(x_fit, 0, width - 1)
         y_fit = np.clip(y_fit, 0, height - 1)
     for i in range(len(x_fit) - 1):
-        cv2.line(blended_image, (x_fit[i], y_fit[i]), (x_fit[i + 1], y_fit[i + 1]), (0, 255, 255), 5)
-    cv2.line(blended_image, baseline[0], baseline[1], (0, 255, 0), 2)
+        cv2.line(blended_image, (x_fit[i], y_fit[i]), (x_fit[i + 1], y_fit[i + 1]), (0, 0, 255), 3)
+    cv2.line(blended_image, baseline[0], baseline[1], (0, 0, 0), 3)
     selected_points = get_equally_spaced_points(x_fit, y_fit)  
     baseline_gradient = (baseline[1][1] - baseline[0][1]) / (baseline[1][0] - baseline[0][0])
     baseline_intercept = baseline[0][1] - baseline_gradient * baseline[0][0]
-    height, width = baseline.shape[:2] 
+    height, width = blended_image.shape[:2] 
     new_coordinates = []
     for (x_fit_i, y_fit_i) in selected_points:
         y_intersection = x_fit_i * baseline_gradient  + baseline_intercept 
@@ -136,7 +178,7 @@ def get_flood_depth(blended_image,reference_mask,warped_flood_mask,
         x_fit_i = max(0, min(x_fit_i, width - 1))
         new_coordinates.append((x_fit_i, y_intersection))
     for i in range(len(selected_points)):
-        cv2.circle(image, selected_points[i], 2, (0, 0, 255), -1)
+        cv2.circle(blended_image, selected_points[i], 3, (255, 255, 0), -1)
     depths = []
     average_depth = 0
     for i in range(len(new_coordinates)):
@@ -146,77 +188,78 @@ def get_flood_depth(blended_image,reference_mask,warped_flood_mask,
         depths.append(real_depth)
         average_depth += real_depth
     average_depth /=  len(new_coordinates)
-    text = f"{average_depth}mm"
-    text_size, _ = cv2.getTextSize(text,cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
+    text = f"{int(average_depth)}mm"
+    text_size, _ = cv2.getTextSize(text,cv2.FONT_HERSHEY_SIMPLEX, 1, 2)
     text_width = text_size[0]
-    center = int(len(new_coordinates) / 2)
-    center_x = new_coordinates[center][1]
+    center = int(len(selected_points) / 2)
+    center_x = selected_points[center][0]
     space_right = width - center_x
     space_left = center_x
     if (space_right >= space_left) or (space_right >= text_width + 2) :
         text_x = center_x + 2
     else:
-        text_x = text_x = center_x - text_width - 2 
+        text_x  = center_x - text_width - 2 
     start_y = 100
-    cv2.arrowedLine(blended_image, (center_x , start_y), new_coordinates[center],(0, 255, 0), 2)   
+    print((center_x , start_y))
+    print(selected_points[center])
+    cv2.arrowedLine(blended_image, (center_x , start_y), selected_points[center],(53, 53, 53), 2)   
     cv2.putText(blended_image, text, (text_x, start_y),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
+                    cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
+    for i in range(len(selected_points)):
+        cv2.circle(blended_image, selected_points[i], 20, (0, 255, 255), -1)
     return average_depth,depths,blended_image
 
-# Example usage
-json_path = "To Embed/test_image_via_data.json"
-image_path = "To Embed/624_Marked.jpg"
-image = cv2.imread(image_path)
-height, width, _ = image.shape
-taxi_bbox, flood_mask = extract_bounding_boxes(json_path,(height,width))
-cv2.namedWindow('Flood mask', cv2.WINDOW_NORMAL)
-cv2.imshow("Flood mask", flood_mask) 
-cv2.waitKey(0)
-cv2.destroyAllWindows()
-subimage = post_process.extract_subimage_from_bbox(image,taxi_bbox)
-print(f"Image Shape: {subimage.shape}")
-#subimage =  cv2.cvtColor(subimage, cv2.COLOR_RGB2BGR) 
-cv2.namedWindow('Extracted Taxi', cv2.WINDOW_NORMAL)
-cv2.imshow("Extracted Taxi",subimage) 
-cv2.waitKey(0)
-cv2.destroyAllWindows()
-ref1 = cv2.imread("To Embed/Reference_Taxi_Body_Outline.jpg")
-ref2 = cv2.imread("To Embed/Reference_Taxi_Body_Outline_Flipped.jpg")
-best_ref, homography_matrix, flag = get_homography_matrix(ref1,ref2,subimage)
-print(f"Homography: {homography_matrix}")
-blended_image, warped_img = warp_flood_over_reference_image(best_ref,flood_mask,homography_matrix, blue_sea_color 
-                  ,alpha1=.5,alpha2=1.0)
-ref_taxi_body_mask, _ = parse_json_to_masks("To Embed/Taxi_Reference_Masks.json", best_ref.shape)
-fig, ax = plt.subplots()
-ax.imshow(cv2.cvtColor(ref_taxi_body_mask,cv2.COLOR_BGR2RGB))
-plt.title("Taxi Mask Original")
-plt.tight_layout()
-plt.show()
-ref_taxi_body_mask = cv2.cvtColor(ref_taxi_body_mask, cv2.COLOR_BGR2GRAY)
-_, ref_taxi_body_mask = cv2.threshold(ref_taxi_body_mask, 10, 255, cv2.THRESH_BINARY)
-fig, ax = plt.subplots()
-ax.imshow(cv2.cvtColor(ref_taxi_body_mask,cv2.COLOR_BGR2RGB))
-plt.title("Taxi Mask Thresholded")
-plt.tight_layout()
-plt.show()
-warped_img = cv2.cvtColor(warped_img, cv2.COLOR_BGR2GRAY)
-cv2.namedWindow('Warped Flood', cv2.WINDOW_NORMAL)
-cv2.imshow("Warped Flood", warped_img) 
-cv2.waitKey(0)
-cv2.destroyAllWindows()
-_, warped_flood_mask =  cv2.threshold(warped_img, 10, 255, cv2.THRESH_BINARY)
-fig, ax = plt.subplots()
-ax.imshow(cv2.cvtColor(warped_flood_mask,cv2.COLOR_BGR2RGB))
-plt.title("Warped_Flood_Mask Thresholded")
-plt.tight_layout()
-plt.show()
-baseline = [[0,767],[1831,767]]
-average_depth, depths, blended_image = get_flood_depth(blended_image,ref_taxi_body_mask,warped_flood_mask,
-                    baseline,2.65)
-fig, ax = plt.subplots()
-ax.imshow(cv2.cvtColor(blended_image,cv2.COLOR_BGR2RGB))
-plt.title("Depth Estimation")
-plt.tight_layout()
-plt.show()
-print(f"Average Depth:{average_depth}")
-print(f"Depths: {depths}")
+if __name__ == "__main__":
+  # Example usage
+  json_path = "To Embed/test_image_via_data.json"
+  image_path = "To Embed/624_Marked.jpg"
+  image = cv2.imread(image_path)
+  image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+  height, width, _ = image.shape
+  taxi_bbox, flood_mask = extract_bounding_boxes(json_path,(height,width))
+  print(flood_mask.shape)
+  cv2.namedWindow('Flood mask', cv2.WINDOW_NORMAL)
+  cv2.imshow("Flood mask", flood_mask) 
+  cv2.waitKey(0)
+  cv2.destroyAllWindows()
+  subimage = post_process.extract_subimage_from_bbox(image,taxi_bbox)
+  subimage =  cv2.cvtColor(subimage, cv2.COLOR_RGB2BGR)
+  save_plot_image(SUBIMAGE,subimage, "Extracted Subimage using Taxi Bounding Box")
+
+  ref1 = cv2.imread(REFERENCE_IMAGE_ONE)
+  ref2 = cv2.imread(REFERENCE_IMAGE_TWO)
+  best_ref, homography_matrix, flag,matched_img = get_homography_matrix(ref1,ref2,subimage)
+  save_plot_image(MATCHES,matched_img,"Correspondences between Reference Image and Scene Image")
+  print(f"Homography Matrix: {homography_matrix}")
+
+  flood_mask = convert_flood_mask_to_color(flood_mask,BLUE_SEA_COLOR)
+
+  blended_image, warped_flood_mask =  \
+        warp_flood_over_reference_image(best_ref,flood_mask,
+                                                        homography_matrix, BLUE_SEA_COLOR , 
+                                                        alpha1=.5,alpha2=1.0)
+  save_plot_image(BLENDED_IMAGE ,blended_image,"Flood Region Registered to the Reference Image")
+
+  if flag < 0:
+      taxi_mask_json_path = REFERENCE_JSON_TWO 
+      
+  else:
+      taxi_mask_json_path = REFERENCE_JSON_ONE
+
+  ref_taxi_body_mask, _ = parse_json_to_masks(taxi_mask_json_path, best_ref.shape)   
+  ref_taxi_body_mask = cv2.cvtColor(ref_taxi_body_mask, cv2.COLOR_BGR2GRAY)
+  _, ref_taxi_body_mask = cv2.threshold(ref_taxi_body_mask, 10, 255, cv2.THRESH_BINARY)
+  save_plot_image(TAXI_BODY,ref_taxi_body_mask,"Mask of Taxi Body from Best Matching Reference Image")
+
+  warped_flood_mask = cv2.cvtColor(warped_flood_mask, cv2.COLOR_BGR2GRAY)
+  _, warped_flood_mask =  cv2.threshold(warped_flood_mask, 10, 255, cv2.THRESH_BINARY)
+  save_plot_image(WARPED_FLOOD,warped_flood_mask,"Mask of Flood Region in Registered Image")
+
+  average_depth, depths, blended_image = get_flood_depth(blended_image,
+                                                                        ref_taxi_body_mask,
+                                                                        warped_flood_mask,
+                                                                        BASELINE,PIXEL_HEIGHT)
+  save_plot_image(DEPTH_RESULTS,blended_image,"Estimated Depth",show=True)
+
+  print(f"Estimated Average Depth: {average_depth}")
+  #sbstst
