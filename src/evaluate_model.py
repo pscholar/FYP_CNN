@@ -44,8 +44,7 @@ print(f"Test images: {len(dataset_test.image_ids)} Classes: {dataset_test.class_
 with tf.device(DEVICE):
     model = modellib.MaskRCNN(mode="inference", model_dir=MODEL_DIR,
                               config=config)
-    #change the weight file name appropriately
-    model.load_weights("mask_rcnn_flood_vehicle_0033.h5", by_name=True)
+    model.load_weights("mrcnn_weights/mask_rcnn_flood_vehicle_0033.h5", by_name=True)
     dset =  [dataset_val, dataset_test, dataset_train]
     dset_names = ["Validation Set","Test Set","Train Set"]
     i = 0
