@@ -2,6 +2,14 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 
+def preprocess_image(image):
+    """Applies CLAHE and Gaussian blur only to the masked region."""
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    gray = clahe.apply(gray)
+    gray = cv2.GaussianBlur(gray, (3, 3), 0)
+
+    return gray
 
 def match_sift_features(image1, image2, num_matches=100,
                         nfeatures=0, nOctaveLayers=3, contrastThreshold=0.04,
@@ -25,9 +33,16 @@ def match_sift_features(image1, image2, num_matches=100,
     good_matches = sorted(good_matches, key=lambda x: x.distance)[:num_matches]   
     return keypoints1, keypoints2, good_matches
 
-def find_best_reference(ref1, ref2, target):
-    keypoints1, keypoints_target1, good_matches1 = match_sift_features(ref1, target)
-    keypoints2, keypoints_target2, good_matches2 = match_sift_features(ref2, target)    
+def find_best_reference(ref1, ref2, target, filter = False):
+    if filter:
+        ref1_gray = preprocess_image(ref1)
+        ref2_gray = preprocess_image(ref2)
+        target_gray = preprocess_image(target)
+        keypoints1, keypoints_target1, good_matches1 = match_sift_features(ref1_gray, target_gray)
+        keypoints2, keypoints_target2, good_matches2 = match_sift_features(ref2_gray, target_gray) 
+    else:
+        keypoints1, keypoints_target1, good_matches1 = match_sift_features(ref1, target)
+        keypoints2, keypoints_target2, good_matches2 = match_sift_features(ref2, target)   
     if len(good_matches1) > len(good_matches2):
         return ref1, keypoints1, keypoints_target1, good_matches1, 1  
     else:
