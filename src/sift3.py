@@ -15,9 +15,8 @@ def match_sift_features(image1, image2, num_matches=100,
     keypoints1, descriptors1 = sift.detectAndCompute(image1, None)
     keypoints2, descriptors2 = sift.detectAndCompute(image2, None)
     
-    bf = cv2.BFMatcher(cv2.NORM_L2, crossCheck=False)  # Brute Force Matcher without cross-checking
-    matches = bf.knnMatch(descriptors1, descriptors2, k=2)  # Find the two nearest neighbors for each descriptor
-    
+    bf = cv2.BFMatcher()  # Brute Force Matcher without cross-checking
+    matches = bf.knnMatch(descriptors1, descriptors2, k=2)  # Find the two nearest neighbors for each descriptor  
     good_matches = []
     
     # Apply Lowe's ratio test
