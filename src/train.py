@@ -258,17 +258,17 @@ def train_model():
     #mask_rcnn_flood_vehicle_0023.h5 pretrained weights.
     #If your beginning with mask_rcnn_coco.h5 pretrained weights,
     #you may need 
-    #print("Training network heads...")
-    # model.train(dataset_train, dataset_val,
-    #                      learning_rate=config.LEARNING_RATE,
-    #                      epochs=30,
-    #                      layers="heads") 
+    print("Training network heads...")
+    model.train(dataset_train, dataset_val,
+                         learning_rate=config.LEARNING_RATE,
+                         epochs=25,
+                         layers="heads") 
    
     #Training: fine tune all layers
     print("Fine-tuning all layers...")
     model.train(dataset_train, dataset_val,
                          learning_rate=config.LEARNING_RATE/10,
-                         epochs=60,
+                         epochs=50,
                          layers="all",
                          custom_callbacks=[loss_logger]                        
                          )

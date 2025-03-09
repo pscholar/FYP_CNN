@@ -1,0 +1,96 @@
+{
+  "_via_settings": {
+    "ui": {
+      "annotation_editor_height": 25,
+      "annotation_editor_fontsize": 0.8,
+      "leftsidebar_width": 18,
+      "image_grid": {
+        "img_height": 80,
+        "rshape_fill": "none",
+        "rshape_fill_opacity": 0.3,
+        "rshape_stroke": "yellow",
+        "rshape_stroke_width": 2,
+        "show_region_shape": true,
+        "show_image_policy": "all"
+      },
+      "image": {
+        "region_label": "__via_region_id__",
+        "region_color": "__via_default_region_color__",
+        "region_label_font": "10px Sans",
+        "on_image_annotation_editor_placement": "NEAR_REGION"
+      }
+    },
+    "core": { "buffer_size": 18, "filepath": {}, "default_filepath": "" },
+    "project": { "name": "Taxi_Reference_Masks" }
+  },
+  "_via_img_metadata": {
+    "Taxi_Better_Outlines.jpg104442": {
+      "filename": "Taxi_Better_Outlines.jpg",
+      "size": 104442,
+      "regions": [
+        {
+          "shape_attributes": {
+            "name": "rect",
+            "x": 256,
+            "y": 283,
+            "width": 256,
+            "height": 128
+          },
+          "region_attributes": { "SIFT_ROI": "markers" }
+        },
+        {
+          "shape_attributes": {
+            "name": "rect",
+            "x": 787,
+            "y": 283,
+            "width": 256,
+            "height": 128
+          },
+          "region_attributes": { "SIFT_ROI": "markers" }
+        },
+        {
+          "shape_attributes": {
+            "name": "rect",
+            "x": 1361,
+            "y": 283,
+            "width": 256,
+            "height": 128
+          },
+          "region_attributes": { "SIFT_ROI": "markers" }
+        },
+        {
+          "shape_attributes": {
+            "name": "polygon",
+            "all_points_x": [
+              10, 23, 53, 209, 217, 231, 280, 297, 331, 379, 407, 443, 477, 498,
+              505, 503, 628, 1207, 1300, 1308, 1346, 1388, 1429, 1474, 1508,
+              1532, 1536, 1538, 1786, 1804, 1814, 1814, 1756, 1517, 1439, 920,
+              431, 164, 87, 68, 47, 22, 12, 5, 2, 4, 5
+            ],
+            "all_points_y": [
+              521, 575, 605, 605, 637, 661, 661, 710, 744, 762, 763, 750, 723,
+              684, 641, 634, 631, 645, 643, 692, 736, 760, 762, 747, 721, 682,
+              648, 638, 632, 566, 477, 380, 282, 43, 14, 10, 13, 23, 31, 54,
+              100, 202, 238, 301, 373, 471, 502
+            ]
+          },
+          "region_attributes": { "SIFT_ROI": "taxi_body" }
+        }
+      ],
+      "file_attributes": {}
+    }
+  },
+  "_via_attributes": {
+    "region": {
+      "SIFT_ROI": {
+        "type": "dropdown",
+        "description": "",
+        "options": { "taxi_body": "", "markers": "" },
+        "default_options": { "markers": true }
+      }
+    },
+    "file": {}
+  },
+  "_via_data_format_version": "2.0.10",
+  "_via_image_id_list": ["Taxi_Better_Outlines.jpg104442"]
+}
