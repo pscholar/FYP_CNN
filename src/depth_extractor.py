@@ -45,7 +45,7 @@ def save_plot_image(file_name,image,title, show = False):
     ax.set_ylabel("pixels")
     plt.tight_layout()
     plt.title(title)
-    plt.savefig(save_path,dpi=300)
+    plt.savefig(save_path,dpi=96)
     if show:
         plt.show()
     else:

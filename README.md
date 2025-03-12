@@ -22,8 +22,8 @@ Match the detected taxi with **reference image**and compute homography matrix.
 
 ## Contributors
 
-- **[Wasswa Ian Senjinja]** - Research & Development
-- **[Nyankunyi Martin]** - Research & Development
+- **Wasswa Ian Senjinja** - Research & Development
+- **Nyankunyi Martin** - Research & Development
 
 ## Credits
 

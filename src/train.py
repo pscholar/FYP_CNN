@@ -6,6 +6,7 @@ import numpy as np
 import skimage.draw
 import random
 import tensorflow.keras as keras
+import imgaug.augmenters as iaa
 from mrcnn import utils
 from mrcnn import model as modellib
 from mrcnn.config import Config
@@ -16,6 +17,14 @@ IMAGES_SAVE_PATH = "visualizations"
 LOG_DIR = "/content/drive/My Drive/loss/"
 TRAIN_ANNOTATIONS_VISUALIZATION_SAVE_NAME = "train_annotation.jpg"
 VAL_ANNOTATIONS_VISUALIZATION_SAVE_NAME = "val_annotation.jpg"
+
+augmentation = iaa.Sequential([
+    iaa.Fliplr(0.5),  
+    iaa.Affine(rotate=(-20, 20)), 
+    iaa.GaussianBlur(sigma=(0.0, 2.0)), 
+    iaa.Multiply((0.8, 1.2)),  
+    iaa.Affine(scale=(0.8, 1.2)) 
+])
 
 class LossLogger(keras.callbacks.Callback):
     def __init__(self, log_dir="logs/"):
@@ -254,7 +263,10 @@ def train_model():
     model.train(dataset_train, dataset_val,
                          learning_rate=config.LEARNING_RATE,
                          epochs=25,
-                         layers="heads") 
+                         layers="heads",
+                         augmentation=augmentation,
+                         custom_callbacks=[loss_logger]
+                         ) 
    
     #Training: fine tune all layers
     print("Fine-tuning all layers...")
@@ -262,6 +274,7 @@ def train_model():
                          learning_rate=config.LEARNING_RATE/10,
                          epochs=50,
                          layers="all",
+                         augmentation=augmentation,
                          custom_callbacks=[loss_logger]                        
                          )
     return model
