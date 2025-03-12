@@ -30,7 +30,7 @@
 
 Source code for this project is available at:
 
-[👉 Mask R-CNN GitHub Repository](https://github.com/pscholar/FYP_CNN)
+[👉 FYP_CNN GitHub Repository](https://github.com/pscholar/FYP_CNN)
 
 ## Credits
 
