@@ -7,7 +7,7 @@ def preprocess_image(image):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
     gray = clahe.apply(gray)
-    gray = cv2.GaussianBlur(gray, (7, 7), 0)
+    gray = cv2.GaussianBlur(gray, (3, 3), 0)
 
     return gray
 
