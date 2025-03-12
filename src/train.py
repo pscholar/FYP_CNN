@@ -11,7 +11,7 @@ from mrcnn import utils
 from mrcnn import model as modellib
 from mrcnn.config import Config
 
-DATASET_DIR = "../prevdataset"
+DATASET_DIR = "../dataset"
 MODEL_DIR = "/content/drive/My Drive/mask_rcnn_logs"
 IMAGES_SAVE_PATH = "visualizations"
 LOG_DIR = "/content/drive/My Drive/loss/"

@@ -4,7 +4,7 @@ from mrcnn import utils
 import mrcnn.model as modellib
 from train import FloodTaxiConfig, FloodTaxiDataset
 
-DATASET_DIR = "../dataset"
+DATASET_DIR = "../prevdataset"
 MODEL_DIR = "/content/drive/My Drive/mask_rcnn_logs"
 
 class InferenceConfig(FloodTaxiConfig):
