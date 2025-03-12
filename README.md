@@ -14,7 +14,7 @@
 **Image Registration:** Extract a **subimage of the taxi** from the detected region.  
 ![Sub Image](src/resources/readme/subimage.jpg)
 
-Match the detected taxi with **reference image**and compute homography matrix.  
+**Establishing Correspondence:** Match the detected taxi with **reference image**and compute homography matrix.  
  ![Mask R-CNN Results](src/resources/readme/matches.jpg)
 
 **Flood Depth Estimation:** Warp the flood mask onto the reference image.and compute depth  
