@@ -29,7 +29,7 @@ def draw_contour_line(binary_image, blend_image, line_color=(0, 255, 0), alpha=0
 def adaptive_color_threshold(flood_rgb_values):
     mean_rgb = np.mean(flood_rgb_values, axis=0)
     std_rgb = np.std(flood_rgb_values, axis=0)
-    threshold_rgb = 1.5 * std_rgb
+    threshold_rgb = 5.5 * std_rgb
     return mean_rgb, threshold_rgb
 
 def create_flood_mask_from_segmentation(flood_mask, segmented_image, flood_region_only):

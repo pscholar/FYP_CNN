@@ -26,7 +26,7 @@ DEPTH_RESULTS = "depth.jpg"
 PIXEL_HEIGHT = 2.65
 BASELINE =  [(0,767),(1831,767)]
 BLUE_SEA_COLOR = (250, 180, 80)
-FILE = "tests/631.jpg"
+FILE = "tests/632.jpg"
 
 def get_ax(rows=1, cols=1, size=8):
     fig = plt.subplots(rows, cols, figsize=(size*cols, size*rows))
@@ -90,11 +90,11 @@ new_taxi_mask, bbox, flood_mask,refinement = pp.process_detection_results(r,imag
 save_plot_image(REFINEMENT,refinement,"Selected Taxi and Flood Pixels",True)
 subimage = pp.extract_subimage_from_bbox(image,bbox)
 subimage =  cv2.cvtColor(subimage, cv2.COLOR_RGB2BGR) 
-save_plot_image(SUBIMAGE,subimage, "Extracted Subimage using Taxi Bounding Box")
+save_plot_image(SUBIMAGE,subimage, "Extracted Subimage using Taxi Bounding Box",True)
 
 ref1 = cv2.imread(REFERENCE_IMAGE_ONE)
 ref2 = cv2.imread(REFERENCE_IMAGE_TWO)
-best_ref, homography_matrix, flag,matched_img = dp.get_homography_matrix(ref1,ref2,subimage)
+best_ref, homography_matrix, flag,matched_img = dp.get_homography_matrix(ref1,ref2,subimage) # will break here
 save_plot_image(MATCHES,matched_img,"Correspondences between Reference Image and Scene Image")
 print(f"Homography Matrix: {homography_matrix}")
 

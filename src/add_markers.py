@@ -132,12 +132,12 @@ def warp_and_blend(ref_image, input_image, mask, homography, flag = 1, feather_s
 if __name__ == "__main__":
   ref_img_path = "resources/Reference_Taxi_Body_Outline.jpg"  
   reference_image = cv2.imread(ref_img_path)
-  input_img_path = "resources/to12.jpg"  
+  input_img_path = "resources/632.jpg"  
   input_image = cv2.imread(input_img_path)
   H, matched_img = get_homography(reference_image, input_image)
   taxi_mask, marker_mask = parse_json_to_masks("resources/Taxi_Reference_Masks.json", reference_image.shape)
   blended_image = warp_and_blend(reference_image,input_image,marker_mask,H,1,3)
-  output_path = "resources/to12_Marked.jpg"
+  output_path = "resources/632_Marked.jpg"
   cv2.imwrite(output_path,blended_image,[cv2.IMWRITE_JPEG_QUALITY, 100])
   fig, ax = plt.subplots()
   ax.imshow(cv2.cvtColor(blended_image,cv2.COLOR_BGR2RGB))
