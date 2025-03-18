@@ -29,7 +29,7 @@ def draw_contour_line(binary_image, blend_image, line_color=(0, 255, 0), alpha=0
 def adaptive_color_threshold(flood_rgb_values):
     mean_rgb = np.mean(flood_rgb_values, axis=0)
     std_rgb = np.std(flood_rgb_values, axis=0)
-    threshold_rgb = 5.5 * std_rgb
+    threshold_rgb = 1.5 * std_rgb
     return mean_rgb, threshold_rgb
 
 def create_flood_mask_from_segmentation(flood_mask, segmented_image, flood_region_only):
@@ -58,6 +58,7 @@ def get_largest_taxi(taxis, rois, masks, class_ids):
 
 def create_roi_polygon(taxi_mask, roi_mask, T_x1, T_x2, T_y2, F_y1, F_y2):
     bottom_pixels = np.argwhere(taxi_mask)
+    height = taxi_mask.shape[0]
     if bottom_pixels.size == 0:
         return None   
     bottom_y_values = {}
@@ -66,6 +67,7 @@ def create_roi_polygon(taxi_mask, roi_mask, T_x1, T_x2, T_y2, F_y1, F_y2):
     sorted_x = sorted(bottom_y_values.keys())
     bottom_points = [(x, bottom_y_values[x]) for x in sorted_x]
     extension_y = int(T_y2 + (F_y2 - F_y1) / 4)
+    extension_y = min(extension_y,height - 1)
     roi_polygon = [
         (T_x1, bottom_points[0][1]),
         *bottom_points,

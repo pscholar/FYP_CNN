@@ -1,0 +1,94 @@
+{
+  "_via_settings": {
+    "ui": {
+      "annotation_editor_height": 25,
+      "annotation_editor_fontsize": 0.8,
+      "leftsidebar_width": 18,
+      "image_grid": {
+        "img_height": 80,
+        "rshape_fill": "none",
+        "rshape_fill_opacity": 0.3,
+        "rshape_stroke": "yellow",
+        "rshape_stroke_width": 2,
+        "show_region_shape": true,
+        "show_image_policy": "all"
+      },
+      "image": {
+        "region_label": "__via_region_id__",
+        "region_color": "__via_default_region_color__",
+        "region_label_font": "10px Sans",
+        "on_image_annotation_editor_placement": "NEAR_REGION"
+      }
+    },
+    "core": { "buffer_size": 18, "filepath": {}, "default_filepath": "" },
+    "project": { "name": "Taxi_Reference_Masks_Flipped" }
+  },
+  "_via_img_metadata": {
+    "Reference_Taxi_Body_Outline_Flipped.jpg148086": {
+      "filename": "Reference_Taxi_Body_Outline_Flipped.jpg",
+      "size": 148086,
+      "regions": [
+        {
+          "shape_attributes": {
+            "name": "polygon",
+            "all_points_x": [
+              14, 14, 30, 44, 288, 316, 369, 430, 480, 520, 534, 647, 1284,
+              1342, 1379, 1408, 1459, 1502, 1539, 1554, 1554, 1550, 1782, 1809,
+              1825, 1823, 1790, 1737, 1236, 618, 362, 306, 160, 76
+            ],
+            "all_points_y": [
+              385, 463, 580, 635, 647, 718, 759, 766, 742, 700, 654, 645, 633,
+              711, 748, 766, 766, 742, 705, 665, 641, 620, 600, 586, 494, 290,
+              112, 29, 14, 8, 16, 47, 184, 283
+            ]
+          },
+          "region_attributes": { "SIFT_ROI": "taxi_body" }
+        },
+        {
+          "shape_attributes": {
+            "name": "rect",
+            "x": 213,
+            "y": 283,
+            "width": 258,
+            "height": 129
+          },
+          "region_attributes": { "SIFT_ROI": "markers" }
+        },
+        {
+          "shape_attributes": {
+            "name": "rect",
+            "x": 783,
+            "y": 282,
+            "width": 259,
+            "height": 134
+          },
+          "region_attributes": { "SIFT_ROI": "markers" }
+        },
+        {
+          "shape_attributes": {
+            "name": "rect",
+            "x": 1312,
+            "y": 284,
+            "width": 267,
+            "height": 129
+          },
+          "region_attributes": { "SIFT_ROI": "markers" }
+        }
+      ],
+      "file_attributes": {}
+    }
+  },
+  "_via_attributes": {
+    "region": {
+      "SIFT_ROI": {
+        "type": "dropdown",
+        "description": "",
+        "options": { "markers": "", "taxi_body": "" },
+        "default_options": { "taxi_body": true }
+      }
+    },
+    "file": {}
+  },
+  "_via_data_format_version": "2.0.10",
+  "_via_image_id_list": ["Reference_Taxi_Body_Outline_Flipped.jpg148086"]
+}
