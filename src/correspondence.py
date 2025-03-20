@@ -13,7 +13,7 @@ def preprocess_image(image):
 
 def match_sift_features(image1, image2, num_matches=100,
                         nfeatures=0, nOctaveLayers=3, contrastThreshold=0.04,
-                        edgeThreshold=10, sigma=1.6, ratio_thresh=0.60):
+                        edgeThreshold=10, sigma=1.6, ratio_thresh=0.6):
     
     if image1 is None or image2 is None:
         raise ValueError("Error: One or both input images are None.")

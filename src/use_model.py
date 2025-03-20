@@ -23,10 +23,10 @@ BLENDED_IMAGE = "registered.jpg"
 TAXI_BODY = "taximask.jpg"
 WARPED_FLOOD = "floodmask.jpg"
 DEPTH_RESULTS = "depth.jpg"
-PIXEL_HEIGHT = 2.65
+PIXEL_HEIGHT = 2.5163
 BASELINE =  [(0,767),(1831,767)]
 BLUE_SEA_COLOR = (250, 180, 80)
-FILE = "../dataset/depth/train/test8_Marked.jpg"
+FILE = "../dataset/depth/train/test7_Marked.jpg"
 
 def get_ax(rows=1, cols=1, size=8):
     fig = plt.subplots(rows, cols, figsize=(size*cols, size*rows))

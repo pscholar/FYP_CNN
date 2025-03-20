@@ -224,8 +224,8 @@ def get_flood_depth(blended_image,reference_mask,warped_flood_mask,
     return average_depth,depths,blended_image
 
 if __name__ == "__main__":
-  json_path = "resources/test8_Marked_via_data.json"
-  image_path = "resources/test8_Marked.jpg"
+  json_path = "resources/test9_Marked_via_data.json"
+  image_path = "resources/test9_Marked.jpg"
   image = cv2.imread(image_path)
   image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
   height, width, _ = image.shape
@@ -235,7 +235,7 @@ if __name__ == "__main__":
   save_plot_image("floodmask.jpg",flood_mask,"Flood Mask",True)
   subimage = pp.extract_subimage_from_bbox(image,taxi_bbox)
   subimage =  cv2.cvtColor(subimage, cv2.COLOR_RGB2BGR)
-  save_plot_image(SUBIMAGE,subimage, "Extracted Subimage using Taxi Bounding Box")
+  save_plot_image(SUBIMAGE,subimage, "Extracted Subimage using Taxi Bounding Box",True)
 
   ref1 = cv2.imread(REFERENCE_IMAGE_ONE)
   ref2 = cv2.imread(REFERENCE_IMAGE_TWO)

@@ -213,12 +213,12 @@ class FloodTaxiConfig(Config):
     # might take a while, so don't set this too small to avoid spending
     # a lot of time on validation stats.
     # Initially, I had set this to 100, during first round of training.
-    STEPS_PER_EPOCH = 200
+    STEPS_PER_EPOCH = 300
     # Number of validation steps to run at the end of every training epoch.
     # A bigger number improves accuracy of validation stats, but slows
     # down the training.
     #Initially, I had set this to 10 during  first round of training.
-    VALIDATION_STEPS = 60
+    VALIDATION_STEPS = 100
     # Minimum probability value to accept a detected instance
     # ROIs below this threshold are skipped
     DETECTION_MIN_CONFIDENCE = 0.9   
@@ -262,7 +262,7 @@ def train_model():
     print("Training network heads...")
     model.train(dataset_train, dataset_val,
                          learning_rate=config.LEARNING_RATE,
-                         epochs=25,
+                         epochs= 100,
                          layers="heads",
                          augmentation=augmentation,
                          custom_callbacks=[loss_logger]
@@ -272,7 +272,7 @@ def train_model():
     print("Fine-tuning all layers...")
     model.train(dataset_train, dataset_val,
                          learning_rate=config.LEARNING_RATE/10,
-                         epochs=50,
+                         epochs=150,
                          layers="all",
                          augmentation=augmentation,
                          custom_callbacks=[loss_logger]                        
