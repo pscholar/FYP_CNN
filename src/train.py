@@ -167,7 +167,7 @@ class FloodTaxiDataset(utils.Dataset):
               class_ids.append(1)
           else:  
               class_ids.append(2)
-      return mask.astype(np.bool), np.array(class_ids, dtype=np.int32)
+      return mask.astype(bool), np.array(class_ids, dtype=np.int32)
 
     def visualize_random_masks(self, dataset_size,save_name):
         random_indices = random.sample(range(dataset_size), min(4, dataset_size))
